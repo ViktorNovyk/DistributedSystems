@@ -1,0 +1,31 @@
+name: iteration1
+services:
+  follower1:
+    image: iteration1:latest
+    container_name: follower1
+    environment:
+      SPRING_PROFILES_ACTIVE: follower
+    ports:
+      - "8081:8080"
+
+  follower2:
+    image: iteration1:latest
+    container_name: follower2
+    environment:
+      SPRING_PROFILES_ACTIVE: follower
+    ports:
+      - "8082:8080"
+
+  leader:
+    image: iteration1:latest
+    container_name: leader
+    environment:
+      SPRING_PROFILES_ACTIVE: leader
+      LEADER_FOLLOWER_URLS_0: "http://follower1:8080"
+      LEADER_FOLLOWER_URLS_1: "http://follower2:8080"
+    ports:
+      - "8080:8080"
+
+networks:
+  default:
+    name: iteration1-network

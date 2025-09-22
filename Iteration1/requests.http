@@ -1,0 +1,21 @@
+### Leader. Add a message
+POST http://localhost:8080/leader/messages
+Content-Type: application/json
+
+{
+  "message": "ADD_1"
+}
+
+### Leader. Get messages
+GET http://localhost:8080/leader/messages
+Content-Type: application/json
+
+
+### Follower1. Get messages
+GET http://localhost:8081/follower/messages
+Content-Type: application/json
+
+
+### Follower2. Get messages
+GET http://localhost:8082/follower/messages
+Content-Type: application/json
