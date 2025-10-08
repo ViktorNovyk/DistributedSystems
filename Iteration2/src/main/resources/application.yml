@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: Iteration2
+  main:
+    lazy-initialization: false
+  mvc:
+    servlet:
+      load-on-startup: 1
