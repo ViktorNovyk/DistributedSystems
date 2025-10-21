@@ -6,6 +6,8 @@ import com.example.common.ReplicationResult;
 import com.example.common.StoreMessageService;
 import com.example.follower.FollowerReplicationRequest;
 import com.example.follower.FollowerReplicationService;
+
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 class FollowerReplicationServiceTest {
   private final FollowerReplicationService service =
-      new FollowerReplicationService(new StoreMessageService(new MessageRepository()));
+      new FollowerReplicationService(new StoreMessageService(new MessageRepository()), Duration.ofSeconds(5L));
   private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 
   @Test

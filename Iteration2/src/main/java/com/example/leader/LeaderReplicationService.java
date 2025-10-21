@@ -10,7 +10,6 @@ import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -67,7 +66,7 @@ public class LeaderReplicationService implements ReplicationService<LeaderReplic
     } finally {
       lock.unlock();
     }
-    storeMessageService.replicate(message);
+    storeMessageService.save(message);
     logger.info("Leader replication is successful. {}", message);
 
     final int waitingCount =
@@ -78,61 +77,22 @@ public class LeaderReplicationService implements ReplicationService<LeaderReplic
 
   private int callFollowersReplication(
       LeaderReplicationRequest leaderReq, FollowerReplicationRequest followerReq) {
-    List<CompletableFuture<ReplicationResult>> futures =
-        followers.stream().map(follower -> callFollowerAsync(followerReq, follower)).toList();
-
     final int waitingCount = leaderReq.getWriteConcern() - 1;
-    waitWriteConcern(waitingCount, futures);
+    final CountDownLatch writeConcernLatch = new CountDownLatch(waitingCount);
+
+    for (Follower follower : followers) {
+      executorService.submit(follower.callFollower(followerReq, writeConcernLatch));
+    }
+
+    awaitWriteConcern(writeConcernLatch);
     return waitingCount;
   }
 
-  private void waitWriteConcern(
-      int waitingCount, List<CompletableFuture<ReplicationResult>> futures) {
-    if (waitingCount > 0 && waitingCount < futures.size()) {
-      waiting(waitingCount, futures);
-
-    } else if (waitingCount >= futures.size()) {
-      logger.info("Waiting for all {} followers to complete replication.", followers.size());
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+  private static void awaitWriteConcern(CountDownLatch writeConcernLatch) {
+    try {
+      writeConcernLatch.await();
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
     }
   }
-
-  private static void waiting(
-      final int waitingCount, final List<CompletableFuture<ReplicationResult>> futures) {
-    logger.info("Waiting for {} followers to complete replication.", waitingCount);
-
-    int finishedCount = 0;
-    List<CompletableFuture<ReplicationResult>> notFinished = futures;
-    while (finishedCount < waitingCount) {
-      final var revisited = notFinished.stream().filter(f -> !f.isDone()).toList();
-      if (revisited.size() < notFinished.size()) {
-        finishedCount = finishedCount + (notFinished.size() - revisited.size());
-        notFinished = revisited;
-      }
-    }
-  }
-
-  private CompletableFuture<ReplicationResult> callFollowerAsync(
-      final FollowerReplicationRequest followerReq, final Follower follower) {
-    return CompletableFuture.supplyAsync(callFollower(followerReq, follower), executorService);
-  }
-
-  private Supplier<ReplicationResult> callFollower(
-      final FollowerReplicationRequest followerReq, final Follower follower) {
-    return () -> {
-      ReplicationResult result =
-          follower
-              .client()
-              .post()
-              .uri("/follower/messages")
-              .body(followerReq)
-              .retrieve()
-              .body(ReplicationResult.class);
-
-      logger.info("{} Replication result: {}", follower.name(), result);
-      return result;
-    };
-  }
-
-  private record Follower(String name, RestClient client) {}
 }

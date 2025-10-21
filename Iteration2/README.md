@@ -54,7 +54,44 @@ If the follower receives a request with a sequence number higher than that of th
 
 There is also a [test](./src/test/java/com/example/FollowerReplicationServiceTest.java) that runs follower replication concurrently to verify that messages are processed in the correct order.
 ### Docker compose
-The [docker-compose.yml](src/main/docker/docker-compose.yml) defines how the leader and followers are booted.
+The [docker-compose.yml](docker/docker-compose.yml) defines how the leader and followers are booted.
 
 To add more followers, duplicate a follower service (update a service name and a port) in the file and add the leader's environment variable:
 LEADER_FOLLOWER_URLS_3 (LEADER_FOLLOWER_URLS_4 etc.) - e.g., http://follower3:8080,http://follower4:8080.
+
+### Run the application with Docker Compose
+Run the following command from the Iteration2 folder:
+```shell
+docker compose -f docker/docker-compose.yml up --build
+```
+
+### Call the application
+
+#### Send a replication request to the leader
+```shell
+curl -X POST --location "http://localhost:8080/leader/messages" \
+    -H "Content-Type: application/json" \
+    -d '{
+          "message": {
+            "value": "ADD_1",
+            "deduplicationId": "dedup-1"
+          },
+          "writeConcern": 3
+        }'
+```
+#### Get all messages from the follower1
+```shell
+curl -X GET --location "http://localhost:8081/follower/messages" \
+    -H "Content-Type: application/json"
+```
+#### Get all messages from the follower2
+```shell
+curl -X GET --location "http://localhost:8082/follower/messages" \
+    -H "Content-Type: application/json"
+```
+
+#### Get all messages from the leader
+```shell
+curl -X GET --location "http://localhost:8080/leader/messages" \
+    -H "Content-Type: application/json"
+```

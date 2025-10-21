@@ -1,21 +1,29 @@
 name: iteration2
 services:
   follower1:
-    image: iteration2:latest
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
     environment:
       SPRING_PROFILES_ACTIVE: follower
+      FOLLOWER_DELAY: PT5S
     ports:
       - "8081:8080"
 
   follower2:
-    image: iteration2:latest
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
     environment:
       SPRING_PROFILES_ACTIVE: follower
+      FOLLOWER_DELAY: PT10S
     ports:
       - "8082:8080"
 
   leader:
-    image: iteration2:latest
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
     environment:
       SPRING_PROFILES_ACTIVE: leader
       LEADER_FOLLOWER_URLS_0: "http://follower1:8080"

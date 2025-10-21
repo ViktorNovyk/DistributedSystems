@@ -3,12 +3,13 @@ package com.example.follower;
 import com.example.common.Message;
 import com.example.common.ReplicationService;
 import com.example.common.StoreMessageService;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,9 +23,13 @@ public class FollowerReplicationService implements ReplicationService<FollowerRe
   private final Set<String> processedMsgIds = Collections.synchronizedSet(new HashSet<>());
   private final ReentrantLock lock = new ReentrantLock();
 
-  public FollowerReplicationService(StoreMessageService storeMessageService) {
+  private final Duration delay;
+
+  public FollowerReplicationService(
+      StoreMessageService storeMessageService, @Value("${follower.delay}") Duration delay) {
     this.storeMessageService = storeMessageService;
-    logger.info("FollowerReplicationService initialized");
+    this.delay = delay;
+    logger.info("FollowerReplicationService initialized. Sleeping delays {} ms", delay.toMillis());
   }
 
   @Override
@@ -34,7 +39,8 @@ public class FollowerReplicationService implements ReplicationService<FollowerRe
         "Follower replication is started. msgId={}, seq={}",
         request.getMessage().deduplicationId(),
         request.getSequence());
-    sleep(20, 200);
+
+    sleep();
 
     try {
       lock.lock();
@@ -48,7 +54,6 @@ public class FollowerReplicationService implements ReplicationService<FollowerRe
       lock.unlock();
     }
 
-    sleep(50, 5000);
     logger.info(
         "Follower replication is successful. msgId={}, seq={}",
         request.getMessage().deduplicationId(),
@@ -70,7 +75,7 @@ public class FollowerReplicationService implements ReplicationService<FollowerRe
   }
 
   private void replicateOrderedMessage(FollowerReplicationRequest request, Message message) {
-    storeMessageService.replicate(message);
+    storeMessageService.save(message);
     logger.info(
         "Follower replication msgId=[{}] seq=[{}] is successful.",
         message.deduplicationId(),
@@ -83,7 +88,7 @@ public class FollowerReplicationService implements ReplicationService<FollowerRe
       // Checking buffers while ordered messages exist in the buffer
       while (buffer.containsKey(nextBufInd)) {
         final Message curMsg = buffer.remove(nextBufInd);
-        storeMessageService.replicate(curMsg);
+        storeMessageService.save(curMsg);
         logger.info(
             "Follower replication from buffer msgId=[{}] seq=[{}] is successful.",
             curMsg.deduplicationId(),
@@ -96,8 +101,7 @@ public class FollowerReplicationService implements ReplicationService<FollowerRe
     }
   }
 
-  private static void sleep(int from, int to) {
-    long delay = ThreadLocalRandom.current().nextLong(from, to);
+  private void sleep() {
     try {
       Thread.sleep(delay);
     } catch (InterruptedException e) {

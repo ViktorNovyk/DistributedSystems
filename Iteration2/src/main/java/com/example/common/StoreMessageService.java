@@ -14,7 +14,7 @@ public class StoreMessageService {
     this.repository = repository;
   }
 
-  public void replicate(Message message) {
+  public void save(Message message) {
     repository.addMessage(message);
   }
 

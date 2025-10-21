@@ -50,12 +50,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <imageName>iteration2:latest</imageName>
-                    <image>
-                        <builder>paketobuildpacks/builder-jammy-base</builder>
-                    </image>
-                </configuration>
             </plugin>
         </plugins>
     </build>
