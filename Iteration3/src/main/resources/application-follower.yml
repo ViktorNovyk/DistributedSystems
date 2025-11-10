@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: Iteration3-Follower
+follower:
+  delay: PT2S

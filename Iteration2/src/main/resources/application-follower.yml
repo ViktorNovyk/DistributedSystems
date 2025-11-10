@@ -1,5 +1,0 @@
-spring:
-  application:
-    name: Iteration2-Follower
-follower:
-  delay: PT5S
