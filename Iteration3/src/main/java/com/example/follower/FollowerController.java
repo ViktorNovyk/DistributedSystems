@@ -24,4 +24,11 @@ public class FollowerController {
   public Collection<Message> getMessages() {
     return followerReplicationService.getMessages();
   }
+
+  @GetMapping("/health")
+  public HealthStatus health() {
+    return new HealthStatus("OK");
+  }
+
+  public record HealthStatus(String status) {}
 }

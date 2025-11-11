@@ -9,12 +9,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClient;
 
 @Profile("leader")
 @Configuration
 @ComponentScan(basePackages = {"com.example.leader"})
 @EnableConfigurationProperties({LeaderProps.class})
+@EnableScheduling
 public class LeaderConfiguration {
   @Bean
   List<Follower> followers(LeaderProps props) {

@@ -8,6 +8,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class LeaderProps {
   private List<String> followerUrls;
   private RequestProps request = new RequestProps();
+  private HeartbeatProps heartbeat = new HeartbeatProps();
+
+  public HeartbeatProps getHeartbeat() {
+    return heartbeat;
+  }
+
+  public void setHeartbeat(HeartbeatProps heartbeat) {
+    this.heartbeat = heartbeat;
+  }
 
   public static class RequestProps {
     private Duration connectionTimeout;
@@ -44,5 +53,26 @@ public class LeaderProps {
 
   public void setRequest(RequestProps request) {
     this.request = request;
+  }
+
+  public static class HeartbeatProps {
+    private Duration suspectedAfter = Duration.ofSeconds(5);
+    private Duration unhealthyAfter = Duration.ofSeconds(15);
+
+    public Duration getSuspectedAfter() {
+      return suspectedAfter;
+    }
+
+    public void setSuspectedAfter(Duration suspectedAfter) {
+      this.suspectedAfter = suspectedAfter;
+    }
+
+    public Duration getUnhealthyAfter() {
+      return unhealthyAfter;
+    }
+
+    public void setUnhealthyAfter(Duration unhealthyAfter) {
+      this.unhealthyAfter = unhealthyAfter;
+    }
   }
 }

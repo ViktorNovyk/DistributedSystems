@@ -19,16 +19,22 @@ public class LeaderReplicationService implements ReplicationService<LeaderReplic
 
   private final FollowerClientService followerClientService;
   private final Sequencer sequencer;
+  private final QuorumService quorumService;
+  private final HeartbeatService heartbeatService;
 
   public LeaderReplicationService(
       StoreMessageService storeMessageService,
       FollowerClientService followerClientService,
       List<Follower> followers,
-      Sequencer sequencer) {
+      Sequencer sequencer,
+      QuorumService quorumService,
+      HeartbeatService heartbeatService) {
     this.storeMessageService = storeMessageService;
     this.followers = followers;
     this.followerClientService = followerClientService;
     this.sequencer = sequencer;
+    this.quorumService = quorumService;
+    this.heartbeatService = heartbeatService;
     logger.info("LeaderReplicationService initialized");
   }
 
@@ -39,6 +45,9 @@ public class LeaderReplicationService implements ReplicationService<LeaderReplic
 
   @Override
   public void replicate(LeaderReplicationRequest request) {
+    if (!quorumService.hasQuorum()) {
+      throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "No quorum");
+    }
     validateWriteConcern(request);
     final Message message = request.getMessage();
     sequencer
@@ -58,9 +67,10 @@ public class LeaderReplicationService implements ReplicationService<LeaderReplic
   }
 
   private void validateWriteConcern(LeaderReplicationRequest request) {
-    int followersCount = followers.size();
-    if (request.getWriteConcern() < 1 || request.getWriteConcern() > followersCount + 1) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid writeConcern");
+    if (request.getWriteConcern() < 1
+        || request.getWriteConcern() > heartbeatService.healthyCount() + 1) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Not enough health nodes to comply with writeConcern");
     }
   }
 
